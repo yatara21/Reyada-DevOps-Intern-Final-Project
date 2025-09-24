@@ -1,0 +1,50 @@
+- name: Deploy Dockerized Python App to Dev Nodes
+  hosts: dev_nodes
+  become: true
+
+  vars:
+    app_dir: /home/khalid/final-project
+    image_name: weather-app
+    container_name: weather-container
+    exposed_port: 5000
+    shared_mount_host: /mnt/weatherdata
+    shared_mount_container: /mnt/weatherdata
+
+  tasks:
+    - name: Ensure NFS share is mounted
+      ansible.posix.mount:
+        path: "{{ shared_mount_host }}"
+        src: "192.168.1.105:/srv/nfs/weatherdata"
+        fstype: nfs
+        opts: rw,sync,hard,intr
+        state: mounted
+
+    - name: Stop old container if running
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+        force_kill: true
+
+    - name: Remove old image if exists
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        state: absent
+      ignore_errors: true
+
+    - name: Build Docker image
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        source: build
+        build:
+          path: "{{ app_dir }}"
+
+    - name: Run container from new image with NFS volume
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ exposed_port }}:{{ exposed_port }}"
+        volumes:
+          - "{{ shared_mount_host }}:{{ shared_mount_container }}"

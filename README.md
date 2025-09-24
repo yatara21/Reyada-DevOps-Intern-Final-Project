@@ -1,2 +1,2 @@
 # Reyada-DevOps-Intern-Final-Project
-final project documentation of reyada internship
+this repo shows the final project for Reyada devops intern

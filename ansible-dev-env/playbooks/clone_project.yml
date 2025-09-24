@@ -1,0 +1,17 @@
+- name: Clone GitHub project on dev nodes
+  hosts: dev_nodes
+  become: true
+  tasks:
+    - name: Ensure Git is installed
+      ansible.builtin.apt:
+        name: git
+        state: present
+        update_cache: true
+
+    - name: Clone project repo
+      become: false  # cloning can be done as X user
+      ansible.builtin.git:
+        repo: # here u can write your repo with the PAT token
+        dest: # your path
+        version: main
+        force: true
